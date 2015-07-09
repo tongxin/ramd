@@ -42,7 +42,7 @@ public class HttpRequetServer {
             p.addLast(new HttpResponseEncoder());
             // Remove the following line if you don't want automatic content compression.
             //p.addLast(new HttpContentCompressor());
-            p.addLast(new RequestHandler());
+            p.addLast(new HttpRequestHandler());
         }
     }
 

@@ -8,13 +8,11 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 
-import java.util.Map;
-
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-public class RequestHandler extends SimpleChannelInboundHandler<Object> {
+public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
     private HttpRequest _request;
     private final StringBuilder _buf = new StringBuilder();
 
@@ -26,23 +24,25 @@ public class RequestHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     protected void messageReceived(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof HttpRequest) {
-            HttpRequest request = _request = (HttpRequest) msg;
-            HttpHeaders headers = request.headers();
-            QueryStringDecoder query = new QueryStringDecoder(request.uri());
+            HttpRequest        request = _request = (HttpRequest) msg;
+            HttpMethod         method  = request.method();
+            HttpHeaders        headers = request.headers();
+            QueryStringDecoder query   = new QueryStringDecoder(request.uri());
 
             if (HttpHeaderUtil.is100ContinueExpected(request))
                 ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
 
-            if (headers != null) for (Map.Entry<CharSequence, CharSequence> h : headers) {}
+//            if (headers != null) for (Map.Entry<CharSequence, CharSequence> h : headers) {}
 
-            parsePathSequence(query.path());
+            if (method.equals(HttpMethod.GET)) {
+                RamdRequest.parseRequest(query.path());
+
+
         }
 
         if (msg instanceof HttpContent) {
             ByteBuf bb = ((HttpContent) msg).content();
-            System.out.println("----httpcontent-----");
             if (bb.isReadable()) {
-                System.out.println(bb.toString(CharsetUtil.UTF_8));
             }
             _buf.append("Done.");
             writeResponse((HttpContent) msg, ctx);
