@@ -34,9 +34,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
 
 //            if (headers != null) for (Map.Entry<CharSequence, CharSequence> h : headers) {}
 
-            if (method.equals(HttpMethod.GET)) {
-                RamdRequest.parseRequest(query.path());
-
+            if (method.equals(HttpMethod.GET))
+                RamdRequest.build(query.path(), query.parameters());
 
         }
 
