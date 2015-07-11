@@ -7,14 +7,16 @@ import java.util.Map;
  * A ramd request is the interface between the ramd core and the http server.
  * When the web server receives a http request, it calls {@code RamdRequest.build}
  * to generate a ramd request and append it to the ramd work queue. A successfully
- * built ramd request contains its handler information. All ramd request handlers
- * should be registered through the {@code RamdRequest.registerHandler} API.
+ * built ramd request contains its handler information. Published ramd request
+ * handlers, those registered through the {@code RamdRequest.registerHandler} API,
+ * are matched against URI path to determine proper handling of an incoming http
+ * request. If not registered, a handler can only be used internally.
  *
+ * A ramd request is stateful. When not fully processed, the request's internal
+ * state contains sufficient information to complete its work. Passing along
+ * a stateful structure, serving a ramd request can be done in recursive fashion.
  */
 public class RamdRequest {
-    public static enum STATUS {
-        INCOMPLETE, COMPLETE
-    }
 
     public static RamdRequest build(String path) {
         return build(path, null, null);
@@ -41,13 +43,13 @@ public class RamdRequest {
         if (y > x) {
             String key = String.valueOf(path, x, y - x);
             RamdRequestHandler h = RamdRequestHandler.find(key);
-            if (h == null) h = SlashHandler.Handler;
+            if (h == null) h = Slash.Handler;
             return new RamdRequest(path, y, parms, data, h);
         }
         return  null;
     }
 
-    private STATUS _status;
+    private boolean _done;
     private char[] _path;
     private int _x;
     private Map<String, List<String>> _parms;
@@ -61,7 +63,7 @@ public class RamdRequest {
                         Map<String, List<String>> parms,
                         String data,
                         RamdRequestHandler handler) {
-        _status = STATUS.INCOMPLETE;
+        _done = false;
         _path = path;
         _x = x;
         _parms = parms;
@@ -70,7 +72,7 @@ public class RamdRequest {
     }
 
     public RamdRequest handle() {
-
+        _handler._mth.invoke(_handler._cls.)
         return this;
     }
 
