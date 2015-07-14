@@ -13,10 +13,11 @@ public class Slash extends Checkable<Slash> {
     }
 
     public RamdRequestHandler slash(RamdRequest request) {
+        int top = request._top;
+        long key = request._stack[top];
+
 
     }
-
-    private Dir slash(Key key) {}
 
     private static RamdRequestHandler __handler = null;
 

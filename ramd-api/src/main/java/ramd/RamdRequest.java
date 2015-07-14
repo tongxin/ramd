@@ -46,7 +46,7 @@ public class RamdRequest {
 
         if (h == null) {
             r._handler = Slash.handler();
-            r._stack[0] = Key.ROOT;
+            r._stack[0] = KeyValue.ROOT;
             r._top = 1;
         }
         return r;
@@ -59,7 +59,7 @@ public class RamdRequest {
     Schema _input;
     Schema _output;
     RamdRequestHandler _handler;
-    Key[] _stack;
+    long[] _stack;
     int _top;
 
     private RamdRequest(char[] path,
@@ -72,7 +72,7 @@ public class RamdRequest {
         _parms = parms;
         _data = data;
         _handler = handler;
-        _stack = new Key[16];
+        _stack = new long[16];
         _top = 0;
     }
 
