@@ -2,7 +2,7 @@ package ramd;
 
 /*
  * Ramd's K/V store is hierarchical, similar to a program's namespace and a file system
- * directory. The Slash class defines handling entering and creating sub-namespace.
+ * directory. The Slash class defines ``slash'', the directory lookup service.
  */
 public class Slash extends Checkable<Slash> {
 
@@ -12,10 +12,12 @@ public class Slash extends Checkable<Slash> {
         return this;
     }
 
-    public RamdRequestHandler slash(RamdRequest request) {
+    @RequestHandler
+    public RamdRequestHandler slash(RamdRequest request) throws Exception {
         int top = request._top;
         long key = request._stack[top];
 
+        KeyValue kv = DMap.get(key);
 
     }
 

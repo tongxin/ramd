@@ -1,5 +1,6 @@
 package ramd;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import ramd.api.Schema;
 
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.Map;
  * state contains sufficient information to complete its work. Passing along
  * a stateful structure, serving a ramd request can be done in recursive fashion.
  */
-public class RamdRequest {
+public class RamdRequest extends Packable<RamdRequest> {
 
     public static RamdRequest build(String path) throws Exception {
         return build(path, null, null);
@@ -46,7 +47,7 @@ public class RamdRequest {
 
         if (h == null) {
             r._handler = Slash.handler();
-            r._stack[0] = KeyValue.ROOT;
+            r._stack[0] = Dir.ROOTKEY;
             r._top = 1;
         }
         return r;

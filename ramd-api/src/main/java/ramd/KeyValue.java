@@ -42,6 +42,7 @@ final public class KeyValue implements Packable<KeyValue> {
     static {
         for (int i = 0; i < TYPES.length; i++)
             TYPEMAP.put(TYPES[i].getName(), i);
+
     }
 
     /**
@@ -51,11 +52,6 @@ final public class KeyValue implements Packable<KeyValue> {
      * the referenced data. Path renaming won't result in store wide remapping.
      */
     private long _key;
-
-    /**
-     * The partition id
-     */
-    private int _part;
 
     /**
      * The data type
@@ -91,6 +87,15 @@ final public class KeyValue implements Packable<KeyValue> {
     }
 
     /**
+     * Partition id is the higher 16bits of a key
+     * @param key
+     * @return partition id
+     */
+    public static int getPartitionId(long key) {
+        return (int)(key >>> 48);
+    }
+
+    /**
      * Serialization API
      * @param bb
      * @return
@@ -98,7 +103,6 @@ final public class KeyValue implements Packable<KeyValue> {
     @Override
     public ByteBuffer pack(ByteBuffer bb) {
         bb.putLong(_key);
-        bb.putInt(_part);
         bb.put(_type);
         bb.putInt(_perm);
         bb.putLong(_ts);
@@ -114,7 +118,6 @@ final public class KeyValue implements Packable<KeyValue> {
     @Override
     public KeyValue unpack(ByteBuffer bb) {
         this._key = bb.getLong();
-        this._part = bb.getInt();
         this._type = bb.get();
         this._perm = bb.getInt();
         this._ts = bb.getLong();
@@ -126,5 +129,5 @@ final public class KeyValue implements Packable<KeyValue> {
         return this;
     }
 
-    public static KeyValue ROOT;
+
 }

@@ -56,4 +56,18 @@ public class Dir implements Packable<Dir> {
 
         return this;
     }
+
+    static Long ROOTKEY = null;
+
+    /**
+     * build the root Dir, must be called before accepting any ramd requests.
+     * The value of rootkey is decided by the Ramd group consensus leader and
+     * circulated to all the member nodes.
+     */
+    static void buildRoot(long rootkey) {
+        if (ROOTKEY != null)  return;
+
+        ROOTKEY = rootkey;
+
+    }
 }
