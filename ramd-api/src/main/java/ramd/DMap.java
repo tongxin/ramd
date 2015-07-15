@@ -9,9 +9,15 @@ public abstract class DMap {
 
     }
 
-    public static KeyValue put(Futures fs, )
+    public static KeyValue put(Futures fs, long key, KeyValue val) {
+
+    }
 
     public static KeyValue get(long key) {
+
+    }
+
+    public static KeyValue get(Futures fs, long key) {
 
     }
 

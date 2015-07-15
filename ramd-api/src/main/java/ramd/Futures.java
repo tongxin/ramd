@@ -2,6 +2,7 @@ package ramd;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 public class Futures {
@@ -21,7 +22,19 @@ public class Futures {
         return this;
     }
 
-    public final void block() {
+    public final void block() throws Exception {
+        while (!_fs.isEmpty()) {
+            Future f;
+            synchronized (this) {
+                if (_fs.isEmpty())
+                    return;
 
+                f = _fs.remove(_fs.size() - 1);
+            }
+
+            try {
+                f.get();
+            } catch (CancellationException e) {}
+        }
     }
 }
