@@ -1,9 +1,12 @@
 package ramd;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
-public class Dir extends Packable {
-
+public class Dir implements Packable<Dir> {
+    private transient KeyValue _kv;
     // use parent key to retrieve the upper level directory structure
     private long _parentKey;
     // this reference, if not null, holds a cached reference of its parent Dir
@@ -11,16 +14,47 @@ public class Dir extends Packable {
     // the basename
     private String _name;
     // list the name-key mappings under this subdirectory
-    private HalfSortedMap _ls;
+    private SortedMap<String, Long> _ls;
+
+    Dir(long parentKey, String name) {
+        _kv = null;
+        _parentKey = parentKey;
+        _parentDir = null;
+        _name = name;
+        _ls = new ConcurrentSkipListMap<String,Long>();
+    }
+
+    Dir setParentDir(Dir parent) {
+        _parentDir = parent;
+        return this;
+    }
+
+
+    public Long[] ls() {
+        return (Long[])_ls.values().toArray();
+    }
+
+    public Map.Entry<String, Long>[] ll() {
+        return (Map.Entry<String,Long>[])_ls.entrySet().toArray();
+    }
+
+    public Long find(String name) {
+        return _ls.get(name);
+    }
+
+    public String basename() {
+        return _name;
+    }
 
     @Override
-    ByteBuffer pack(ByteBuffer bb) {
+    public ByteBuffer pack(ByteBuffer bb) {
 
         return bb;
     }
 
     @Override
-    Packable unpack(byte[] bytes) {
-        return null;
+    public Dir unpack(ByteBuffer bb) {
+
+        return this;
     }
 }

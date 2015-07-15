@@ -5,5 +5,5 @@ import java.nio.ByteBuffer;
 public interface Packable<P extends Packable> {
 
     ByteBuffer pack(ByteBuffer bb);
-    P unpack(byte[] bytes);
+    P unpack(ByteBuffer bb);
 }
