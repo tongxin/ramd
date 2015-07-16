@@ -18,6 +18,7 @@ public class RamdPeer {
     // available socket addresses
     InetAddress _ip;
     int _port;
+    volatile Status _status;
     private InetSocketAddress _sa;
     private ConcurrentSkipListMap<Integer, Task> _pendingTasks;
 
@@ -26,6 +27,13 @@ public class RamdPeer {
         _port = port;
         _sa = new InetSocketAddress(ip, port);
         _pendingTasks = new ConcurrentSkipListMap<Integer, Task>();
+    }
+
+    public static class Status implements Packable<Status> {
+        int _consensus_epoch;
+        int _jar_hash;
+        int _num_cpus;
+        int _tot_mem;
     }
 
     // reusable sockets
