@@ -1,13 +1,14 @@
 package ramd;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import ramd.api.Schema;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
 /**
- * A ramd request is the interface between the ramd core and the http server.
+ * A ramd request is the external description of a job. The RamdRequest class
+ * serves as interface between the ramd core and the http server.
  * When the web server receives a http request, it calls {@code RamdRequest.build}
  * to generate a ramd request and append it to the ramd work queue. A successfully
  * built ramd request contains its handler information. Published ramd request
@@ -19,7 +20,7 @@ import java.util.Map;
  * state contains sufficient information to complete its work. Passing along
  * a stateful structure, serving a ramd request can be done in recursive fashion.
  */
-public class RamdRequest extends Packable<RamdRequest> {
+public class RamdRequest implements Packable<RamdRequest> {
 
     public static RamdRequest build(String path) throws Exception {
         return build(path, null, null);
@@ -110,5 +111,15 @@ public class RamdRequest extends Packable<RamdRequest> {
             return key;
         } else
             return null;
+    }
+
+    @Override
+    public ByteBuffer pack(ByteBuffer bb) {
+        return null;
+    }
+
+    @Override
+    public RamdRequest unpack(ByteBuffer bb) {
+        return null;
     }
 }
