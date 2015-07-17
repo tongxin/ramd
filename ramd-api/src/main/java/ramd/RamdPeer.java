@@ -1,8 +1,11 @@
 package ramd;
 
+import ramd.util.InetUtil;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,25 +18,41 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * accessing handler to a particular peer.
  */
 public class RamdPeer {
+    /**
+     * The peer id used to key'ed into cluster configuration and other
+     * collective member info.
+     */
+    long _id;
+
     // available socket addresses
-    InetAddress _ip;
-    int _port;
     volatile Status _status;
     private InetSocketAddress _sa;
     private ConcurrentSkipListMap<Integer, Task> _pendingTasks;
 
     RamdPeer(InetAddress ip, int port) {
-        _ip = ip;
-        _port = port;
+        _id = InetUtil.ip2id(ip, port);
         _sa = new InetSocketAddress(ip, port);
         _pendingTasks = new ConcurrentSkipListMap<Integer, Task>();
     }
 
     public static class Status implements Packable<Status> {
-        int _consensus_epoch;
+        // consensus epoch
+        int _epoch;
+        // cluster config hash
+        int _cchash;
         int _jar_hash;
         int _num_cpus;
         int _tot_mem;
+
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return null;
+        }
+
+        @Override
+        public Status unpack(ByteBuffer bb) {
+            return null;
+        }
     }
 
     // reusable sockets
