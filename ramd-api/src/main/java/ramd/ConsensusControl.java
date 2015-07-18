@@ -16,6 +16,8 @@ public class ConsensusControl {
     static ClusterConfig cconfig;
     //
     static Map<Long,RamdPeer> peers;
+    static RamdPeer SELF;
+
     /**
      * Cluster configuration is the list of Ramd peers that everyone
      * acknowledges the status of everyone else. Change of this must be
@@ -43,13 +45,18 @@ public class ConsensusControl {
     }
 
     /**
-     * Propose a new leader election. This will happen after any new
-     * node tries to join the group via this node. Since the election
-     * result is only dependent on the common knowledge that everyone
-     * shares about their peers, the proposal should be exactly the
-     * the individual knowledge of the one who raised it.
+     * Propose a new term. This will happen after any new node tries to
+     * join the group via this node or after timeout from leader's last
+     * heartbeat. Since the election result is only dependent on the
+     * common knowledge that everyone shares about their peers, it suffices
+     * that the proposal only contains the next epoch number and the node
+     * list.
+     *
+     * Alternative to proactive term change is quiescent consensus where
+     * a consensus is naturally reached when everyone received heartbeat
+     * from everyone else with the same cluster config.
      */
-    private static void proposeElection() {
+    private static void proposeNewTerm() {
 
     }
 
@@ -117,14 +124,48 @@ public class ConsensusControl {
      * Heartbeat messages are sent between leader and member only.
      */
     static class Heartbeat {
-        long _peerid;
-        RamdPeer.Status _status;
+        static ByteBuffer bb = ByteBuffer.allocate(1000);
 
         /**
          * receive a heartbeat message from a node.
          */
-        static void receive(Heartbeat h) {
-            
+        static void recv(RamdPeer.Status s) {
+
+        }
+
+        static void send(long peer, RamdPeer.Status s) {
+
+        }
+
+        static void bcast(RamdPeer.Status s) throws Exception {
+            RamdPeer.multcast(peers.values(), (ByteBuffer)bb.clear());
+        }
+
+        public class Daemon extends Thread {
+            public Daemon() {
+                super("Heartbeat");
+                setDaemon(true);
+            }
+
+            public void run() {
+                Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+                while (true) {
+                    Runtime jvm = Runtime.getRuntime();
+                    RamdPeer.Status s = SELF._status;
+                    s._epoch = cconfig.epoch;
+                    s._cchash = cconfig.hashCode();
+                    s._num_cpus = jvm.availableProcessors();
+                    s._tot_mem = (int)(jvm.totalMemory() >>> 20); // to MBytes
+                    s._max_mem = (int)(jvm.maxMemory() >>> 20); // to MBytes
+                    s._free_mem = (int)(jvm.freeMemory() >>> 20); // to MBytes_
+                    try {
+                        bcast(s);
+                    } catch (Exception e) {
+                        Ramd.log("Heartbeat messages failed to be multicasted.");
+                        System.exit(-1);
+                    }
+                }
+            }
         }
 
     }
