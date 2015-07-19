@@ -10,7 +10,9 @@ import java.util.Map;
 public abstract class UDPMsg<T extends Packable> implements Packable<T> {
     public final byte _type;
     static Class[] TYPES = {
-                RamdPeer.Status.class
+            RamdPeer.Status.class,
+            ConsensusControl.ClusterConfig.class,
+            ConsensusControl.Report.class
     };
 
     static Map<Class, Byte> TYPEMAP;

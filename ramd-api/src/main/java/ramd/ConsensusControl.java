@@ -1,6 +1,5 @@
 package ramd;
 
-import com.sun.rmi.rmid.ExecPermission;
 import ramd.util.Util;
 
 import java.net.InetAddress;
@@ -17,6 +16,8 @@ public class ConsensusControl {
     static Map<Long,RamdPeer> peers;
     static Map<Long,RamdPeer> expats;
     static RamdPeer SELF;
+    static RamdPeer LEADER;
+    static boolean hibernate = false;
 
     /**
      * Cluster configuration is the list of Ramd peers that everyone
@@ -32,8 +33,6 @@ public class ConsensusControl {
         // The recognized peers plus myself, the premise that everyone should
         // agree on in the leader election process. Should be kept sorted.
         long[] _nodes;
-        // leader index
-        int leader;
 
         ClusterConfig() {
             super(udptype);
@@ -60,28 +59,139 @@ public class ConsensusControl {
         }
     }
 
+
     /**
-     * Propose a new term. This will happen after any new node tries to
-     * join the group via this node or after timeout from leader's last
-     * heartbeat. Since the election result is only dependent on the
-     * common knowledge that everyone shares about their peers, it suffices
-     * that the proposal only contains the next epoch number and the node
-     * list.
+     * Member reports to leader on seeing someone
+     */
+    static class Report extends UDPMsg<Report> {
+        static byte udptype = UDPMsg.TYPEMAP.get(Report.class);
+        static Report msg;
+
+        long _expatid;
+
+        Report() {
+            super(udptype);
+        }
+
+        Report setNewPeer(long peer) {
+            _expatid = peer;
+            return this;
+        }
+
+        static Report getMsg() {
+            if (msg == null) msg = new Report();
+            return msg;
+        }
+
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return null;
+        }
+
+        @Override
+        public Report unpack(ByteBuffer bb) {
+            return null;
+        }
+    }
+
+    /**
+     * Leader announcement
+     */
+    static class Announce extends UDPMsg<Announce> {
+        static byte udptype = UDPMsg.TYPEMAP.get(Announce.class);
+        static Announce msg;
+
+        int _epoch;
+        long[] _nodes;
+
+        Announce() {
+            super(udptype);
+        }
+
+        static Announce getMsg() {
+            if (msg == null) msg = new Announce();
+            return msg;
+        }
+
+        Announce setPeers(long[] ps, long p) {
+            long[] nodes = Arrays.copyOf(ps, ps.length+1);
+            nodes[nodes.length-1] = p;
+            return this;
+        }
+
+        Announce setEpoch(int epoch) {
+            _epoch = epoch;
+            return this;
+        }
+
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return bb;
+        }
+
+        @Override
+        public Announce unpack(ByteBuffer bb) {
+            return null;
+        }
+    }
+
+    static class Inform extends UDPMsg<Inform> {
+        static byte udptype = UDPMsg.TYPEMAP.get(Inform.class);
+
+        Inform() {
+            super(udptype);
+        }
+
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return null;
+        }
+
+        @Override
+        public Inform unpack(ByteBuffer bb) {
+            return null;
+        }
+    }
+
+    /**
+     * Propose a new term. This will happen after heartbeat timeout from
+     * the leader. Any node who loses contact with the leader, meaning
+     * the leader and this node are isolated in two disconnected network
+     * partitions, broadcasts this Propose message to everyone it can reach.
+     * The result is the nodes in the same partition get to know their
+     * situation soon. Dead nodes are treated as the same as an disconnected
+     * single node partitions.
+     *
+     * Once the nodes in the newly formed partition gathers the new config
+     * info, and of course as of then they should've agreed on the new
+     * leader, they will decide whether to hibernate indefinitely due to
+     * missing backups in the partition. When hibernate, it's not necessary
+     * to distinguish a leader follower difference between the nodes.
+     *
+     * However, if the new partition is lucky enough to have a complete
+     * backup set, which is only possible when the partition occupies
+     * a majority of nodes, the new leader will start exercising its role.
      *
      * Alternative to proactive term change is quiescent consensus where
      * a consensus is naturally reached when everyone received heartbeat
      * from everyone else with the same cluster config.
      */
-    private static void proposeNewTerm() {
+    static class Propose extends UDPMsg<Propose> {
+        static byte udptype = UDPMsg.TYPEMAP.get(Propose.class);
 
-    }
+        Propose() {
+            super(udptype);
+        }
 
-    /**
-     * Cast a vote on next leader candidate, which is automatically
-     * decided by the supplied peer list.
-     */
-    private static void vote(List<RamdPeer> peers) {
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return null;
+        }
 
+        @Override
+        public Propose unpack(ByteBuffer bb) {
+            return null;
+        }
     }
 
     // This log is replicated on all peers driven by consensus algorithm.
@@ -148,6 +258,9 @@ public class ConsensusControl {
          * Receive a heartbeat message from a peer.
          */
         static void recv(RamdPeer.Status s) throws Exception {
+            // Remain passive to any heartbeat messages if in a hibernate mode.
+            if (hibernate) return;
+
             long t = System.currentTimeMillis();
             long id = s._peerid;
 
@@ -165,20 +278,29 @@ public class ConsensusControl {
                 expats.put(id, peer);
                 peer._status = s;
                 peer._lasthb = t;
-                // as soon as I've heard from this guy, send back my cluster config.
-                peer.udpSend(cconfig.pack((ByteBuffer) bb.clear()));
 
-                // announce the new comer
-                
+                // Now report the new comer to the leader who will officially announce
+                // the enrollment once it receives reports from all the members
+                if (LEADER != SELF) {
+                    // Inform this guy of my current cluster config.
+                    peer.udpSend(cconfig.pack((ByteBuffer) bb.clear()));
+                    LEADER.udpSend(Report.getMsg().setNewPeer(id).pack((ByteBuffer) bb.clear()));
+                    return;
+                }
             }
 
-            if ((Arrays.binarySearch(cconfig._nodes, id) >= 0) {
-
+            // Leader reaches here, common path
+            if (Arrays.binarySearch(cconfig._nodes, id) >= 0) {
+                // bro's heartbeat
+                peer._lasthb = t;
+                return;
             }
-        }
 
-        static void send(long peer, RamdPeer.Status s) {
-
+            // Single node active partition ? then enroll this guy immediately.
+            if (cconfig._nodes.length == 1) {
+                Announce msg = Announce.getMsg().setPeers(cconfig._nodes, id).setEpoch(cconfig.epoch+1);
+                peer.udpSend(msg.pack((ByteBuffer)bb.clear()));
+            }
         }
 
         static void bcast(RamdPeer.Status s) throws Exception {
@@ -194,7 +316,7 @@ public class ConsensusControl {
 
             public void run() {
                 Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-                while (true) {
+                while (!hibernate) {
                     Runtime jvm = Runtime.getRuntime();
                     RamdPeer.Status s = SELF._status;
                     s._epoch = cconfig.epoch;
@@ -204,9 +326,9 @@ public class ConsensusControl {
                     s._max_mem = (int)(jvm.maxMemory() >>> 20); // to MBytes
                     s._free_mem = (int)(jvm.freeMemory() >>> 20); // to MBytes_
                     try {
-                        bcast(s);
+                        LEADER.udpSend(s.pack((ByteBuffer) bb.clear()));
                     } catch (Exception e) {
-                        Ramd.log("Heartbeat messages failed to be multicasted.");
+                        Ramd.log("Heartbeat messages failed to be sent.");
                         System.exit(-1);
                     }
                 }
