@@ -1,12 +1,11 @@
 package ramd;
 
+import com.sun.rmi.rmid.ExecPermission;
 import ramd.util.Util;
 
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The consensus control module.
@@ -16,6 +15,7 @@ public class ConsensusControl {
     static ClusterConfig cconfig;
     //
     static Map<Long,RamdPeer> peers;
+    static Map<Long,RamdPeer> expats;
     static RamdPeer SELF;
 
     /**
@@ -23,15 +23,21 @@ public class ConsensusControl {
      * acknowledges the status of everyone else. Change of this must be
      * initiated by the leader and be accepted by everyone.
      */
-    static class ClusterConfig {
+    static class ClusterConfig extends UDPMsg<ClusterConfig> {
+        static byte udptype = UDPMsg.TYPEMAP.get(ClusterConfig.class);
+
         // The consensus epoch number. An epoch, aka a term, starts as a new
         // leader is elected and ends as the next leader election is proposed.
         int epoch;
-        // The recognized peers, the premise that everyone should agree on
-        // in the leader election process. Should be kept sorted.
+        // The recognized peers plus myself, the premise that everyone should
+        // agree on in the leader election process. Should be kept sorted.
         long[] _nodes;
         // leader index
         int leader;
+
+        ClusterConfig() {
+            super(udptype);
+        }
 
         /**
          * short hash mainly used to exchange cluster config between peers
@@ -41,6 +47,16 @@ public class ConsensusControl {
             long h = 0;
             for (long id : _nodes) h = Util.nextHash(h, id);
             return (int)((h >>> 32) ^ h);
+        }
+
+        @Override
+        public ByteBuffer pack(ByteBuffer bb) {
+            return null;
+        }
+
+        @Override
+        public ClusterConfig unpack(ByteBuffer bb) {
+            return null;
         }
     }
 
@@ -124,13 +140,41 @@ public class ConsensusControl {
      * Heartbeat messages are sent between leader and member only.
      */
     static class Heartbeat {
+        // all heartbeat message sendings/receivings happen single-threadedly
+        // so sharing a bytebuffer is safe.
         static ByteBuffer bb = ByteBuffer.allocate(1000);
 
         /**
-         * receive a heartbeat message from a node.
+         * Receive a heartbeat message from a peer.
          */
-        static void recv(RamdPeer.Status s) {
+        static void recv(RamdPeer.Status s) throws Exception {
+            long t = System.currentTimeMillis();
+            long id = s._peerid;
 
+            RamdPeer peer = peers.get(id);
+
+            if (peer == null) { // first contact from this dude
+                // put on the expat list anyway
+                if (expats == null) expats = new HashMap<Long, RamdPeer>();
+                try {
+                    peer = RamdPeer.create(id);
+                } catch (Exception e) {
+                    Ramd.log("Received heartbeat with an broken id.");
+                    return;
+                }
+                expats.put(id, peer);
+                peer._status = s;
+                peer._lasthb = t;
+                // as soon as I've heard from this guy, send back my cluster config.
+                peer.udpSend(cconfig.pack((ByteBuffer) bb.clear()));
+
+                // announce the new comer
+                
+            }
+
+            if ((Arrays.binarySearch(cconfig._nodes, id) >= 0) {
+
+            }
         }
 
         static void send(long peer, RamdPeer.Status s) {
@@ -138,7 +182,8 @@ public class ConsensusControl {
         }
 
         static void bcast(RamdPeer.Status s) throws Exception {
-            RamdPeer.multcast(peers.values(), (ByteBuffer)bb.clear());
+            if (s == null) return;
+            RamdPeer.multcast(peers.values(), s.pack((ByteBuffer)bb.clear()));
         }
 
         public class Daemon extends Thread {

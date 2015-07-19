@@ -34,6 +34,21 @@ public class RamdPeer {
     }
 
     /**
+     * Send a datagram to a Ramd peer.
+     * @param peer
+     * @param bb
+     * @throws Exception
+     */
+    public static void udpSend(RamdPeer peer, ByteBuffer bb) throws Exception {
+        if (UDP_Chan == null) try {
+            UDP_Chan = DatagramChannel.open();
+        } catch (IOException e) {
+            Ramd.fail("Openning UDP channel failed.");
+        }
+        UDP_Chan.send(bb, peer._sa);
+    }
+
+    /**
      * The peer id used to key'ed into cluster configuration and other
      * collective member info.
      */
@@ -41,7 +56,8 @@ public class RamdPeer {
 
     // available socket addresses
     volatile Status _status;
-    private InetSocketAddress _sa;
+    long _lasthb;
+    InetSocketAddress _sa;
     private ConcurrentSkipListMap<Integer, Task> _pendingTasks;
 
     RamdPeer(InetAddress ip, int port) {
@@ -50,7 +66,13 @@ public class RamdPeer {
         _pendingTasks = new ConcurrentSkipListMap<Integer, Task>();
     }
 
-    public static class Status implements Packable<Status> {
+    public static RamdPeer create(long id) throws Exception {
+        return new RamdPeer(InetUtil.id2ip(id), InetUtil.id2port(id));
+    }
+
+    public static class Status extends UDPMsg<Status> {
+        final static byte udptype = UDPMsg.TYPEMAP.get(Status.class);
+
         long _peerid;
         // consensus epoch
         int _epoch;
@@ -61,6 +83,10 @@ public class RamdPeer {
         int _tot_mem;
         int _max_mem;
         int _free_mem;
+
+        Status() {
+            super(udptype);
+        }
 
         @Override
         public ByteBuffer pack(ByteBuffer bb) {
@@ -103,5 +129,7 @@ public class RamdPeer {
         }
     }
 
-
+    public void udpSend(ByteBuffer bb) throws Exception {
+        RamdPeer.udpSend(this, bb);
+    }
 }
