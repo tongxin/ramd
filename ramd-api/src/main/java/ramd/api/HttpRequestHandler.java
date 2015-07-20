@@ -7,10 +7,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
+import ramd.RamdException;
 import ramd.RamdRequest;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
@@ -23,7 +25,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, Object msg) {
+    protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof HttpRequest) {
             HttpRequest        request = _request = (HttpRequest) msg;
             HttpMethod         method  = request.method();
@@ -35,17 +37,18 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
 
 //            if (headers != null) for (Map.Entry<CharSequence, CharSequence> h : headers) {}
 
-            if (method.equals(HttpMethod.GET))
-                RamdRequest.build(query.path(), query.parameters());
-
+            if (method.equals(HttpMethod.GET)) {
+                RamdRequest r = RamdRequest.build(query.path(), query.parameters());
+                while (!r.done()) r.handle();
+                _buf.append(r.getJson());
+            }
         }
 
         if (msg instanceof HttpContent) {
             ByteBuf bb = ((HttpContent) msg).content();
             if (bb.isReadable()) {
             }
-            _buf.append("Done.");
-            writeResponse((HttpContent) msg, ctx);
+            writeResponse((HttpContent) bb, ctx);
         }
     }
 

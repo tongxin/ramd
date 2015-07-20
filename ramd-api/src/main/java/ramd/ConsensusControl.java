@@ -331,6 +331,12 @@ public class ConsensusControl {
                         Ramd.log("Heartbeat messages failed to be sent.");
                         System.exit(-1);
                     }
+
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Ramd.halt("Heartbeat interrupted.");
+                    }
                 }
             }
         }

@@ -14,6 +14,6 @@ allprojects {
 project('ramd-api') {
     dependencies {
         compile 'io.netty:netty-all:5.0.0.Alpha2'
-
+        compile 'com.google.code.gson:gson:2.3.1'
     }
 }

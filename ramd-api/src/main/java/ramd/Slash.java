@@ -19,7 +19,7 @@ public class Slash extends Checkable<Slash> {
 
         KeyValue kv = DMap.get(key);
 
-        return
+        return null;
     }
 
     private static RamdRequestHandler __handler = null;

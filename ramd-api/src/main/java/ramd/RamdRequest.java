@@ -85,6 +85,11 @@ public class RamdRequest implements Packable<RamdRequest> {
 
     public boolean done() { return _handler == null; }
 
+    public String getJson() {
+        if (!done()) return null;
+        return _output.toJson();
+    }
+
     // advance path cursor over next slashes.
     boolean skipSlashes() {
         char[] path = _path;

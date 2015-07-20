@@ -1,5 +1,6 @@
 package ramd;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,9 @@ public class RamdRequestHandler {
         Checkable handler = cls.newInstance();
         Method  method = handler.check(mth, ptypes);
 
+        // Verify that the handler class has the ``handler'' static method
+        Method  getHandlerMethod = handler.check("handler", new Class[]{RamdRequestHandler.class});
+
         if (method == null) Ramd.fail("Failed to build ramd request handler.");
         return new RamdRequestHandler(key, doc, cls, method, handler.build());
     }
@@ -40,5 +44,34 @@ public class RamdRequestHandler {
     public static void register(String key, String doc, Class  cls, String mth
     ) throws Exception {
         __registry.put(key, build(key, doc, cls, mth, new Class[]{RamdRequestHandler.class, RamdRequest.class}));
+    }
+
+    public static void register(RamdRequestHandler handler) {
+        __registry.put(handler._key, handler);
+    }
+
+    static Class[] API_CLASSES = {
+            Slash.class,
+            StatusAPI.class
+    };
+
+    static {
+        for (Class c : API_CLASSES) {
+            if (!Checkable.class.isAssignableFrom(c)) {
+                Ramd.log("Can't register non-Checkable Handler classs");
+                continue;
+            }
+            try {
+                Method getHandlerMethod = ((Class<? extends Checkable>) c).getMethod("handler", new Class[]{RamdRequestHandler.class});
+                RamdRequestHandler handler = (RamdRequestHandler) getHandlerMethod.invoke(null);
+                __registry.put(handler._key, handler);
+
+            } catch (NoSuchMethodException e) {
+                Ramd.log("Failed to log RamdRequestHandler class " + c.getName());
+            } catch (Exception e) {
+                Ramd.log("Failed to invoke handler method on class " + c.getName());
+            }
+
+        }
     }
 }

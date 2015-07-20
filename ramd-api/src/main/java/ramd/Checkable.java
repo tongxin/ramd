@@ -36,4 +36,5 @@ public abstract class Checkable<C extends Checkable>{
      * @return created instance of class C
      */
     abstract C build();
+
 }
