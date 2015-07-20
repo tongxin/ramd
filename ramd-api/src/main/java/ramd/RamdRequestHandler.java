@@ -1,6 +1,5 @@
 package ramd;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +28,7 @@ public class RamdRequestHandler {
         Method  method = handler.check(mth, ptypes);
 
         // Verify that the handler class has the ``handler'' static method
-        Method  getHandlerMethod = handler.check("handler", new Class[]{RamdRequestHandler.class});
+        Method  getHandlerMethod = handler.check("handler", new Class[0]);
 
         if (method == null) Ramd.fail("Failed to build ramd request handler.");
         return new RamdRequestHandler(key, doc, cls, method, handler.build());
@@ -43,7 +42,7 @@ public class RamdRequestHandler {
 
     public static void register(String key, String doc, Class  cls, String mth
     ) throws Exception {
-        __registry.put(key, build(key, doc, cls, mth, new Class[]{RamdRequestHandler.class, RamdRequest.class}));
+        __registry.put(key, build(key, doc, cls, mth, new Class[]{RamdRequest.class}));
     }
 
     public static void register(RamdRequestHandler handler) {
@@ -62,7 +61,7 @@ public class RamdRequestHandler {
                 continue;
             }
             try {
-                Method getHandlerMethod = ((Class<? extends Checkable>) c).getMethod("handler", new Class[]{RamdRequestHandler.class});
+                Method getHandlerMethod = ((Class<? extends Checkable>) c).getMethod("handler", new Class[0]);
                 RamdRequestHandler handler = (RamdRequestHandler) getHandlerMethod.invoke(null);
                 __registry.put(handler._key, handler);
 
