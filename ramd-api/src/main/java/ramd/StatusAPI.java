@@ -31,7 +31,7 @@ public class StatusAPI extends Checkable<StatusAPI> {
                             "Get current system status of this Ramd node",
                             StatusAPI.class,
                             "getStatus",
-                            new Class[]{RamdRequestHandler.class, RamdRequest.class});
+                            new Class[]{RamdRequest.class});
 
             }
         }

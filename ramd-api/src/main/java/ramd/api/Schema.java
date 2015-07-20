@@ -32,8 +32,8 @@ public class Schema {
     /**
      * Add row to an input/output schema. Ownership of the String array is transferred
      * to the Schema.
-     * @param row
-     * @return
+     * @param row row to add to Schema
+     * @return this Schema
      * @throws Exception
      */
     public Schema addRow(String[] row) throws Exception {

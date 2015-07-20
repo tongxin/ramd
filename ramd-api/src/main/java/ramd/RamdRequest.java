@@ -34,11 +34,11 @@ public class RamdRequest implements Packable<RamdRequest> {
         char[] path = pathStr.toCharArray();
         assert path[0] == '/';
 
-        int x = 1;
-        while (path[x++] == '/' && x < path.length);
+        int x = 0;
+        while (path[x] == '/' && x < path.length) x++;
 
         int y = x;
-        while (y < path.length && path[y++] != '/');
+        while (y < path.length && path[y] != '/') y++;
 
         if (y == x) return null;
 
@@ -95,7 +95,7 @@ public class RamdRequest implements Packable<RamdRequest> {
         char[] path = _path;
         int x = _x;
 
-        while (path[x++] == '/' && x < path.length);
+        while (path[x] == '/' && x < path.length) x++;
 
         if (x > _x) {
             _x = x;
