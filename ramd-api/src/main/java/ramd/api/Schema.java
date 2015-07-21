@@ -50,8 +50,17 @@ public class Schema {
 
 
     public String toJson() {
+        //Return Json. e.g: {"schema":"ip,port,mem","values":[["192.168.1.1","23456","1024m"],...]}
         if (_gson == null) _gson = new Gson();
-        return "{ \"ip\" : \"localhost\", \"port\" : \"23456\"}";
+        String res,schema = "";
+        for(String key: _schema.keySet()) {
+            schema = schema + key + ",";
+        }
+        //delete the last ","
+        if(schema != null && schema.endsWith(",")) schema = schema.substring(0,schema.length()-1);
+        res = "{schema:" + schema + "values:" + _gson.toJson(_tab) + "}";
+        return res ;
+//        return "{ \"ip\" : \"localhost\", \"port\" : \"23456\"}";
 //        return _gson.toJson(this);
     }
 }
