@@ -7,12 +7,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
-import ramd.RamdException;
 import ramd.RamdRequest;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
@@ -48,7 +46,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
             ByteBuf bb = ((HttpContent) msg).content();
             if (bb.isReadable()) {
             }
-            writeResponse((HttpContent) bb, ctx);
+            writeResponse((HttpContent) msg, ctx);
         }
     }
 

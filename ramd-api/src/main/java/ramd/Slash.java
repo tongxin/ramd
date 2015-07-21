@@ -33,7 +33,7 @@ public class Slash extends Checkable<Slash> {
                             "The ramd k/v store subdirectory(subspace) handler",
                             Slash.class,
                             "slash",
-                            new Class[]{RamdRequestHandler.class, RamdRequest.class});
+                            new Class[]{RamdRequest.class});
 
             }
         }
